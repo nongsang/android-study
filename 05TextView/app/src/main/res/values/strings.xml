@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">05TextView</string>
+    <string name="hello">Hello, world!</string> <!-- 새로운 문자열 추가 -->
+</resources>
