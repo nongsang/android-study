@@ -2,6 +2,7 @@ package com.example.a14qrcodereader
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
@@ -9,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraProvider
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.utils.futures.Futures
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -20,6 +22,8 @@ import com.example.a14qrcodereader.databinding.ActivityMainBinding
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -35,6 +39,9 @@ class MainActivity : AppCompatActivity() {
     private val PERMISSIONS_REQUEST_CODE = 1
     // 권한 요청할 기능 리스트
     private val PERMISSIONS_REQUESTED = arrayOf(Manifest.permission.CAMERA)
+
+    // 이미지 분석이 실시간으로 이루어지므로 onDetect()가 여러번 호출되는 것을 방지
+    private var isDetected = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +65,14 @@ class MainActivity : AppCompatActivity() {
              // 카메라 실행
             startCamera()
         }
+    }
+
+    // 포커스가 MainActivity로 돌아오면 실행되는 함수
+    override fun onResume() {
+        super.onResume()
+
+        // 다시 QR 코드를 인식할 수 있도록 설정
+        isDetected = false
     }
     
     // 필요한 모든 권한 유무 확인
@@ -102,13 +117,15 @@ class MainActivity : AppCompatActivity() {
                 // 카메라 프로바이더 획득
                 val cameraProvider = cameraProviderFuture.get()
 
-                // 프리뷰 객체
-                val preview = getPreview()
                 // 후면 카메라 사용
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                // 프리뷰 객체
+                val preview = getPreview()
+                // 이미지 분석 실행기
+                val imageAnalysis = getImageAnalysis()
 
                 // 미리보기 기능 선택
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview)
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis)
 
             }, ContextCompat.getMainExecutor((this)))
         }
@@ -141,14 +158,16 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
-                // 프리뷰 객체
-                val preview = getPreview()
                 // 후면 카메라 사용
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                // 프리뷰 객체
+                val preview = getPreview()
+                // 이미지 분석 실행기
+                val imageAnalysis = getImageAnalysis()
 
                 cameraProvider.unbindAll()
                 // 미리보기 기능 선택
-                cameraProvider.bindToLifecycle(this@MainActivity, cameraSelector, preview)
+                cameraProvider.bindToLifecycle(this@MainActivity, cameraSelector, preview, imageAnalysis)
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -166,5 +185,33 @@ class MainActivity : AppCompatActivity() {
         preview.surfaceProvider = binding.barcodePreview.surfaceProvider
 
         return preview
+    }
+
+    // CameraX 기능 중 이미지 분석 기능을 담당하는 UseCase 객체를 반환하는 함수
+    fun getImageAnalysis() : ImageAnalysis {
+        // 싱글스레드만 사용하는 쓰레드풀을 생성
+        val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+        // 이미지 분석 실행기를 생성
+        val imageAnalysis = ImageAnalysis.Builder().build()
+        
+        // 이미지 분석 실행기에 할당할 쓰레드풀, 정의된 분석기를 등록
+        imageAnalysis.setAnalyzer(cameraExecutor, QRCodeAnalyzer(object : OnDetectListener {
+            override fun onDetect(msg: String) {
+                // 분석이 완료되면 QR 코드에 있는 문자열을 토스트로 출력
+                Toast.makeText(this@MainActivity, msg, Toast.LENGTH_SHORT).show()
+
+                if (!isDetected) {
+                    isDetected = true
+
+                    // ResultActivity로 가는 인텐트 생성
+                    val intent = Intent(this@MainActivity, ResultActivity::class.java)
+                    // 액티비티로 이동할 때 데이터를 키-값 쌍의 형태로 전달할 수 있다.
+                    intent.putExtra("msg", msg)
+                    startActivity(intent)
+                }
+            }
+        }))
+
+        return imageAnalysis
     }
 }
