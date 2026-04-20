@@ -11,6 +11,10 @@ import com.example.a15todolist.databinding.ActivityAddTodoBinding
 import com.example.a15todolist.db.AppDatabase
 import com.example.a15todolist.db.ToDoDao
 import com.example.a15todolist.db.ToDoEntity
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.stackTrace
 
 class AddToDoActivity : AppCompatActivity() {
 
@@ -66,17 +70,36 @@ class AddToDoActivity : AppCompatActivity() {
         if (toDoImportance == -1 || toDoTitle.isBlank()) {
             Toast.makeText(this, "모든 항목을 채워주세요.", Toast.LENGTH_SHORT).show()
         } else {
-            // 데이터베이스 관련 작업은 백그라운드 쓰레드에서 진행해야 한다.
+            {
+                // 데이터베이스 관련 작업은 백그라운드 쓰레드에서 진행해야 한다.
+                // 네트워크 통신, 데이터베이스 쿼리 등은 처리에 긴 시간이 들기 때문
+                Thread {
+                    // 데이터베이스에 엔티티 저장
+                    toDoDao.insertToDo(ToDoEntity(null, toDoTitle, toDoImportance))
+                    // 액티비티 관련 작업은 UI 쓰레드에서 처리하도록 설정
+                    runOnUiThread {
+                        Toast.makeText(this, "추가되었습니다.", Toast.LENGTH_SHORT).show()
+                        finish()    // AddToDoActivity 종료
+                    }
+                }.start()
+            }
+
+            // 코루틴을 사용하여 데이터베이스 처리
             // 네트워크 통신, 데이터베이스 쿼리 등은 처리에 긴 시간이 들기 때문
-            Thread {
-                // 데이터베이스에 엔티티 저장
-                toDoDao.insertToDo(ToDoEntity(null, toDoTitle, toDoImportance))
-                // 액티비티 관련 작업은 UI 쓰레드에서 처리하도록 설정
-                runOnUiThread {
-                    Toast.makeText(this, "추가되었습니다.", Toast.LENGTH_SHORT).show()
-                    finish()    // AddToDoActivity 종료
+            lifecycleScope.launch {
+                try {
+                    // 네트워크 통신, 데이터베이스 쿼리 등에 특화된 스레드풀 사용
+                    withContext(Dispatchers.IO) {
+                        toDoDao.insertToDo(ToDoEntity(null, toDoTitle, toDoImportance))
+                    }
+
+                    // lifecycleScope 코루틴을 사용하면 자동으로 생명주기에 맞게 동기화를 해주므로 runOnUiThread를 사용하지 않아도 된다.
+                    Toast.makeText(this@AddToDoActivity, "추가되었습니다.", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(this@AddToDoActivity, "저장에 실패했습니다.", Toast.LENGTH_SHORT).show()
                 }
-            }.start()
+            }
         }
     }
 }
