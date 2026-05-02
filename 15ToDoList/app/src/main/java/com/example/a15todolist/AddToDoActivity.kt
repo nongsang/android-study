@@ -70,19 +70,17 @@ class AddToDoActivity : AppCompatActivity() {
         if (toDoImportance == -1 || toDoTitle.isBlank()) {
             Toast.makeText(this, "모든 항목을 채워주세요.", Toast.LENGTH_SHORT).show()
         } else {
-            {
-                // 데이터베이스 관련 작업은 백그라운드 쓰레드에서 진행해야 한다.
-                // 네트워크 통신, 데이터베이스 쿼리 등은 처리에 긴 시간이 들기 때문
-                Thread {
-                    // 데이터베이스에 엔티티 저장
-                    toDoDao.insertToDo(ToDoEntity(null, toDoTitle, toDoImportance))
-                    // 액티비티 관련 작업은 UI 쓰레드에서 처리하도록 설정
-                    runOnUiThread {
-                        Toast.makeText(this, "추가되었습니다.", Toast.LENGTH_SHORT).show()
-                        finish()    // AddToDoActivity 종료
-                    }
-                }.start()
-            }
+            /*// 데이터베이스 관련 작업은 백그라운드 쓰레드에서 진행해야 한다.
+            // 네트워크 통신, 데이터베이스 쿼리 등은 처리에 긴 시간이 들기 때문
+            Thread {
+                // 데이터베이스에 엔티티 저장
+                toDoDao.insertToDo(ToDoEntity(null, toDoTitle, toDoImportance))
+                // 액티비티 관련 작업은 UI 쓰레드에서 처리하도록 설정
+                runOnUiThread {
+                    Toast.makeText(this, "추가되었습니다.", Toast.LENGTH_SHORT).show()
+                    finish()    // AddToDoActivity 종료
+                }
+            }.start()*/
 
             // 코루틴을 사용하여 데이터베이스 처리
             // 네트워크 통신, 데이터베이스 쿼리 등은 처리에 긴 시간이 들기 때문
@@ -98,6 +96,9 @@ class AddToDoActivity : AppCompatActivity() {
                 } catch (e: Exception) {
                     e.printStackTrace()
                     Toast.makeText(this@AddToDoActivity, "저장에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                } finally {
+                    // 데이터 추가에 성공했든 실패했든 AddToDoActivity를 종료한다.
+                    finish()
                 }
             }
         }
