@@ -1,10 +1,15 @@
 package com.example.a15todolist
 
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat.startActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat.enableEdgeToEdge
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,7 +19,7 @@ import com.example.a15todolist.db.ToDoDao
 import com.example.a15todolist.db.ToDoEntity
 import kotlinx.coroutines.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), OnItemLongClickListener {
 
     private lateinit var binding: ActivityMainBinding
 
@@ -67,7 +72,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setRecyclerView() {
         // 어댑터 생성
-        adapter = ToDoRecyclerViewAdapter(toDoList)
+        adapter = ToDoRecyclerViewAdapter(toDoList, this)
         // 뷰 객체의 어댑터에 생성한 어댑터 설정
         binding.recyclerView.adapter = adapter
         // 레이아웃 매니저 생성 및 설정
@@ -77,5 +82,28 @@ class MainActivity : AppCompatActivity() {
     override fun onRestart() {
         super.onRestart()
         getAllToDoList()
+    }
+
+    override fun onLongClick(position: Int) {
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        builder.setTitle("할 일 삭제")
+        builder.setMessage("정말 삭제하시겠습니까?")
+        builder.setNegativeButton("취소", null)
+        builder.setPositiveButton("네"
+        ) { p0, p1 -> deleteToDo(position) }
+        builder.show()
+    }
+
+    private fun deleteToDo(position: Int) {
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                toDoDao.deleteToDo(toDoList[position])  // DB에서 삭제
+                toDoList.removeAt(position)     // 리스트에서 삭제
+            }
+
+            // 어댑터에 데이터가 바뀌었음을 알림
+            adapter.notifyDataSetChanged()
+            Toast.makeText(this@MainActivity, "삭제되었습니다.", Toast.LENGTH_SHORT).show()
+        }
     }
 }

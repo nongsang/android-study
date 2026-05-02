@@ -7,7 +7,8 @@ import com.example.a15todolist.databinding.ItemTodoBinding
 import com.example.a15todolist.db.ToDoEntity
 
 // 뷰홀더 클래스를 가지는 어댑터를 상속한 어댑터 클래스
-class ToDoRecyclerViewAdapter(private val toDoList: ArrayList<ToDoEntity>)
+class ToDoRecyclerViewAdapter(private val toDoList: ArrayList<ToDoEntity>,
+                              private val listener: OnItemLongClickListener)
     : RecyclerView.Adapter<ToDoRecyclerViewAdapter.MyViewHolder>() {
 
         // 내부 클래스로 구현한 뷰홀더 클래스
@@ -53,6 +54,12 @@ class ToDoRecyclerViewAdapter(private val toDoList: ArrayList<ToDoEntity>)
         // 항목 하나하나 설정
         holder.tv_item_importance.text = toDoData.importance.toString()
         holder.tv_item_title.text = toDoData.title
+
+        // 오래 누르기 이벤트 등록
+        holder.root.setOnLongClickListener {
+            listener.onLongClick(position)
+            false   // setOnClickListener()는 실행하지 않음
+        }
     }
 
     // 데이터가 총 몇 개인지 변환
