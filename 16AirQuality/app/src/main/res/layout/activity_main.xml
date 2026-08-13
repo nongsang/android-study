@@ -44,7 +44,7 @@
         android:textColor="#000000"
         android:textSize="32sp"
         android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="@+id/guideline3"
+        app:layout_constraintStart_toStartOf="@+id/guideline2"
         app:layout_constraintTop_toTopOf="@+id/guideline" />
 
     <TextView
@@ -55,7 +55,7 @@
         android:text="대한민국 서울특별시"
         android:textColor="#000000"
         android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="@+id/guideline3"
+        app:layout_constraintStart_toStartOf="@+id/guideline2"
         app:layout_constraintTop_toBottomOf="@+id/tv_location_title" />
 
     <ImageView
