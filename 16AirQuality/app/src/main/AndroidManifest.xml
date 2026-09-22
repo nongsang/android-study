@@ -2,9 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.INTERNET"/>   <!-- 외부 API를 사용해 정보를 지속적으로 받아야 하기때문에 추가 -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>   <!-- 사용자의 정확한 위치 추적 -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/> <!-- 사용자의 대략적인 위치 추적 -->
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
