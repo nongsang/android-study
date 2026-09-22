@@ -15,7 +15,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme._16AirQuality" >
+        android:theme="@style/Theme._17AirQuality" >
 
         <!-- 구글 지도 작동을 위해 추가하는 라이브러리 -->
         <uses-library
